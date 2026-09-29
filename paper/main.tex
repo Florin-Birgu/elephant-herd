@@ -32,18 +32,21 @@ listeners, each holding its partition as a cached prefix, and broadcasts every
 conversational turn to all of them. Each listener contributes a cited fact or stays
 silent, and a leader merges what returns into a briefing.
 
-Measured on RULER with seven listener models, three results. \textbf{Partitioning
-does not improve retrieval}: a 7-way herd and a single model reading everything both
-score 100\% at 131K, 256K and 512K tokens, at the same cost; the case for partitioning
-is capacity and specialisation, not recall. \textbf{Partitioning does not break chained
-facts either}, provided each listener is asked for relevant material rather than for
-the answer: on a variable-tracking chain split across seven partitions, one round
-scores 9 or 10 out of 10 for five of seven models. \textbf{Cheap listeners match a
-frontier one}: four models costing \$0.004 to \$0.086 per query score the same as
-Claude Sonnet 5 at \$0.357. We also report how an earlier version of our own harness
-produced 0\% on the chain task for all seven models, Sonnet included, and why a uniform
-zero across vendors should be read as a fault in the harness before a property of the
-method.
+Measured on RULER with seven listener models and on a test built from GitLab's public
+handbook, four results. \textbf{Partitioning does not improve retrieval}: a 7-way herd
+and a single model reading everything both score 100\% at 131K, 256K and 512K tokens,
+at the same cost; the case for partitioning is capacity and specialisation, not recall.
+\textbf{Partitioning does not break chained facts either}, provided each listener is
+asked for relevant material rather than for the answer: split seven ways, one round
+scores 9 or 10 out of 10 for five of seven models at 128K, and DeepSeek-V4.1-Flash stays
+at 10 of 10 up to 512K. \textbf{Cheap listeners match a frontier one}: four models
+costing \$0.004 to \$0.086 per query score the same as Claude Sonnet 5 at \$0.357.
+\textbf{On realistic questions the herd answers 111 of 116}: 96 questions asked in
+other words than the text, plus 20 overheard conversations, over eight sections of the
+GitLab handbook (806K tokens), for \$0.59 per full run. We also report how an earlier
+version of our own harness produced 0\% on the chain task for all seven models, Sonnet
+included, and why a uniform zero across vendors should be read as a fault in the harness
+before a property of the method.
 \end{abstract}
 
 \section{Motivation}
@@ -114,7 +117,9 @@ from fp4 to bf16. Unpinned routing varies recall between calls.
 
 \textbf{Listed cache prices are unreliable.} One provider billed 4.2$\times$ its
 advertised cache-read rate, because a five-minute TTL means calls inside the window
-re-create the cache while still reporting a 100\% cache hit.
+re-create the cache while still reporting a 100\% cache hit. Another reported a 100\%
+hit on an 806K-token prefix and billed \$0.037 for the turn, against \$0.040 uncached;
+a third host serving the same model billed \$0.0037.
 
 \textbf{Truncation is indistinguishable from silence.} Reasoning tokens come out of the
 same budget as the reply. A listener that exhausts that budget while reasoning returns
@@ -138,9 +143,9 @@ Every listener is pinned to one host, so routing cannot vary quantization or rec
 between calls.
 
 Sections \ref{sec:retrieval} and \ref{sec:length} use GLM-5.3-Flash on haystacks
-generated from Paul Graham essays. Sections \ref{sec:models} and \ref{sec:harness} use
-seven models on the public 128K RULER set published as
-\texttt{self-long/RULER-llama3-1M}, $n=10$ per cell. Costs are OpenRouter prices in
+generated from Paul Graham essays. Sections \ref{sec:models} to \ref{sec:long} use
+seven models on the public RULER set published on Hugging Face as
+\path{self-long/RULER-llama3-1M}, $n=10$ per cell. Costs are OpenRouter prices in
 September 2026 for one uncached query of about 128K input tokens; token counts are
 given so they can be recomputed as prices change.
 
@@ -295,15 +300,108 @@ Results from the earlier version that depended on this harness are withdrawn: th
 finding about the rule for halting iteration. Iteration was compensating for the
 harness, and is not needed for any result reported here.
 
+
+\subsection{Chains at 256K and 512K}\label{sec:long}
+
+Splitting 512K tokens seven ways gives each listener about 73K. We repeated the chain
+task at 256K and 512K with one model reading everything and with the herd, for the two
+cheapest listeners, $n=10$.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Listener, instruction & 128K & 256K & 512K \\
+\midrule
+DeepSeek-V4.1-Flash, single call        & 10/10 & 10/10 & 10/10 \\
+DeepSeek-V4.1-Flash, herd               & 10/10 & 10/10 & 10/10 \\
+GLM-5.3-Flash, single call              & 10/10 & 10/10 & 10/10 \\
+GLM-5.3-Flash, herd                     &  9/10 &  7/10 &  1/6  \\
+GLM-5.3-Flash, herd, ``report, not judge'' & --  &  9/10 &  8/10 \\
+\bottomrule
+\end{tabular}
+\caption{Chain task. GLM at 512K lost four samples to host errors. DeepSeek rows use the
+second instruction and a 60K reply budget; GLM's first herd row uses the instruction of
+Section~\ref{sec:models} and a 20K budget.}
+\end{table}
+
+GLM's reasoning on a silent reply shows why it dropped links: it found its line
+(\texttt{VAR AMBYO = VAR COWQQ}), read the instruction to include pointers, and decided
+the pointer was irrelevant because the other end was not in its part. The same slice
+asked again sometimes reported the line and sometimes did not. Replacing the instruction
+with one that says the listener's job is to report, not to judge, raised GLM from 1 of
+6 to 8 of 10 at 512K. More reply budget did not raise it further, and a separate cap on
+reasoning at 8K left accuracy unchanged while cutting cost by a third and latency
+fivefold. DeepSeek needed neither change.
+
+\subsection{Realistic questions over a real handbook}\label{sec:handbook}
+
+RULER hides one fact in filler and asks with the text's own words. Real notes differ:
+many documents on one subject, answers that change over time, more than one right
+answer, and questions in other words. We built a test from the public GitLab handbook,
+pinned to commit \texttt{7a2e264}: eight sections (product, finance, total rewards,
+leadership, hiring, communication, values, CEO), 806K tokens, one listener per section,
+each holding its section as a cached prefix through the same code and listener prompt
+the system uses in deployment. No leader: replies are joined and graded as they are.
+
+Questions were written by Claude subagents in three stages. Readers listed 284 facts
+with verbatim quotes, all confirmed by script. Writers turned them into questions in
+other words than the source. Checkers that had not seen the writing verified each answer
+against its quote, searched the eight sections for other passages answering the same
+question, and fixed 69 items and dropped 9, including one wrong answer and two places
+where the handbook contradicts itself. The final set is 96 questions and 20 overheard
+conversations, 15 of them with a relevant fact and 5 with none. GPT-5.4 graded each
+reply against the accepted answers and source quotes, alongside a text match.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Kind & $n$ & DeepSeek-V4.1-Flash & GLM-5.3-Flash \\
+\midrule
+Answer held by one listener            & 45 & 45 & 45 \\
+More than one right answer             &  8 &  8 &  8 \\
+Answer changed over time               & 10 & 10 & 10 \\
+Answer spread over two or three        & 19 & 17 & 18 \\
+No answer in the eight sections        & 14 & 12 & 12 \\
+Overheard conversation                 & 20 & 19 & 18 \\
+\midrule
+Total                                  & 116 & 111 & 111 \\
+Cost of the full run                   &     & \$0.59 & \$4.16 \\
+\bottomrule
+\end{tabular}
+\caption{Handbook test, one round, the deployed listener prompt. Judge and text match
+disagree on one item per listener.}
+\end{table}
+
+Both listeners answer 111 of 116; DeepSeek does it at a seventh of the cost and is the
+system's default listener as a result. The two no-answer items both missed point to the
+handbook section that holds the answer, which the grader counts as answering. The
+remaining misses are a needed part left out, because the listener holding it stayed
+silent or gave only half of it, and, for GLM, two false alarms on conversations where
+nothing was relevant.
+
+The first grading scored the same replies 98 and 89 of 116. The judge had read the
+joined replies as one voice, so a listener writing that its part did not mention
+something, next to another listener's correct answer, was scored as a contradiction.
+Once told the reply is several listeners' notes, judge and text match agreed on all but
+one item per listener. This is also the clearest weakness the test shows: about a third
+of contributions came from listeners that did not hold the answer, often to say so. In
+deployment the leader filters them, but they are paid for.
+
 \section{Limitations}
 
-$n$ is 10 per cell; single-sample differences between listeners are not meaningful.
-The chain comparison uses one length (128K), one partition count (7) and one chain
-shape. Retrieval and context-length results use one model and one haystack type.
+$n$ is 10 per cell on RULER; single-sample differences between listeners are not
+meaningful. The chain comparison uses one partition count (7) and one chain shape.
 
-The RULER instruction above is written for this benchmark. The deployed system asks
-listeners for a cited contribution of one to three sentences, and has not been
-evaluated with the same rigour.
+The RULER instruction is written for that benchmark. The handbook test uses the
+deployed listener prompt, but no leader and none of the Claude Code integration.
+
+The handbook questions were written and checked by one model family (Claude) and graded
+by another (GPT-5.4); twenty were spot-checked by hand. The handbook is public and
+likely in the listeners' training data. We planned to drop any question a listener
+answers without the handbook and did not run that check, so some answers may come from
+memory rather than from the held sections.
 
 We do not know why two listeners fail on chains under both instructions. Our count of
 how many listeners spoke treats an empty reply as speaking, so the speaker counts in
@@ -313,15 +411,16 @@ RULER cannot test the system's central design choice. Its haystacks have no doma
 structure, so semantic partitioning is not expressible and the results measure
 \emph{arbitrary} partitioning, a lower bound. Its needles also share vocabulary with the
 question, which is the easy case; NoLiMa \cite{nolima} shows accuracy falling sharply
-once that overlap is removed. Whether domain-coherent partitions do better is untested
-and requires a corpus with real domains.
+once that overlap is removed. Whether domain-coherent partitions do better is still untested; the handbook
+test, whose partitions are real subjects, makes the comparison possible but it has not
+been run.
 
 There is no retrieval baseline. The claim here concerns partitioning versus whole
 context, not versus retrieval.
 
-The conversational setting that motivates the system is not benchmarked; RULER is
-single-query. Whether a listener recognises relevance when \emph{no question was asked}
-is the claim the system rests on and the one least tested here.
+The conversational setting that motivates the system is tested only by 20 overheard
+conversations. Whether a listener recognises relevance when \emph{no question was asked}
+is the claim the system rests on and still the least tested here.
 
 \section{Related work}
 
@@ -337,8 +436,10 @@ Overhearing agents \cite{overhearing} survey single assistants that monitor ambi
 activity and intervene when useful, and identify ``when to speak'' as open.
 
 The contribution here is the persistence-via-cache economics, the measurement that
-cheap listeners suffice, and the finding that the listener's instruction, not the
-partitioning, decides whether facts spread across partitions survive.
+cheap listeners suffice, the finding that the listener's instruction, not the
+partitioning, decides whether facts spread across partitions survive, and a public test
+of realistic questions over a company handbook, with the questions, their sources and
+the prompts that produced them.
 
 \section*{Code}
 

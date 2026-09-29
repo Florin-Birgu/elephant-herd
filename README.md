@@ -198,8 +198,8 @@ smaller members of the herd.
 
 Works, used daily by one person, not yet used by anyone else.
 
-Done: the runtime, both Claude Code hooks, the conversation elephant, `--deep` with
-the halting fix, named herds, the `/herd:init` skill, the benchmark harness, and the
+Done: the runtime, both Claude Code hooks, the conversation elephant, `--deep`,
+named herds, the `/herd:init` skill, the benchmark harness, and the
 RULER results above. The listener model was chosen by measurement, not by price list:
 DeepSeek-V4.1-Flash answered 111 of 116 questions about GitLab's public handbook, the
 same as GLM-5.3-Flash, at a seventh of the cost.
@@ -209,12 +209,17 @@ Not done, and worth knowing before you rely on it:
 - No RAG baseline, so "better than retrieval" is untested. The measured comparison is
   partitioned-versus-whole-context, which is a different question.
 - No test of whether grouping by subject beats grouping at random. That is the central
-  design claim and it needs a question set that only real use produces.
-- The overhearing case is unmeasured. Every benchmark number here comes from direct
-  questions, which is not the setting this was built for.
-- Barely any tests, and nothing has been run end to end since the named-herd refactor.
+  design claim. The handbook test makes it possible, since its sections are real
+  subjects, but it has not been run.
+- The overhearing case is barely measured: 20 conversations in the handbook test
+  (19 of 20 for DeepSeek). Everything else comes from direct questions, which is not
+  the setting this was built for.
+- The handbook is public and probably in the models' training data. The check for
+  answers a model knows without the handbook was planned and not run.
+- The handbook test runs the real elephant code, but not the leader or the Claude Code
+  hooks. Those have unit tests only.
 
-Write-up in `docs/paper-draft.md`.
+Write-up in `paper/main.pdf`.
 
 ## Licence
 
