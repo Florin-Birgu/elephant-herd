@@ -1,0 +1,4 @@
+#!/bin/bash
+# herd - thin launcher so the CLI works from anywhere
+export PYTHONPATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/src"
+exec python3 -m herd.cli "$@"

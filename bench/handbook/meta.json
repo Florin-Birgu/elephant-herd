@@ -1,0 +1,19 @@
+{
+  "benchmark": "GitLab handbook, realistic-use test for Elephant Herd",
+  "created": "2026-09-27",
+  "corpus": {
+    "repo": "https://gitlab.com/gitlab-com/content-sites/handbook",
+    "commit": "7a2e264cb798305fd5c92b586ef9fe633a730244",
+    "path": "content/handbook",
+    "sections": ["product", "finance", "total-rewards", "leadership", "hiring", "communication", "values", "ceo"],
+    "approx_tokens": 1000000,
+    "credit": "Content by GitLab B.V. and contributors, from the public GitLab handbook. Not redistributed here; fetched at the pinned commit."
+  },
+  "generation": {
+    "model": "claude-opus-5-5",
+    "how": "Claude subagents in three stages. Readers (6, one per section or pair of small sections) listed notable facts with verbatim quotes. Writers (3) wrote questions from the fact lists, not the raw text. Checkers (2), which did not see the writing, verified quotes, support, wording, completeness of accepted answers, and absence for no-answer items; they fixed or dropped items. A script (scripts/check_facts.py) independently confirmed every reader quote is verbatim in its file.",
+    "prompts": "generation_prompts.txt",
+    "note": "The question files are the benchmark. Generation is not meant to be rerun; a rerun would give different questions."
+  },
+  "scoring": "An answer is correct if every entry of answer_parts is matched by at least one of its strings (case-insensitive substring). no_answer items are correct when the system says nothing or says it does not know."
+}

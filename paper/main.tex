@@ -1,0 +1,379 @@
+% Elephant Herd
+% Compiles with pdflatex. Deliberately few packages so arXiv builds it without fuss.
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\title{Elephant Herd:\\
+Partitioning a Cached Corpus Across Listening Agents}
+\author{Florin Birgu}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Keeping an entire corpus resident in a language model's context, rather than
+retrieving fragments of it per query, was until recently priced out of existence. Two
+independent cost reductions changed that: capable small models, roughly 67$\times$
+cheaper per token than frontier models, and prompt caching, a further 5$\times$ on
+repeated reads. Together a 334$\times$ reduction, which takes a turn over a
+1.19M-token corpus from \$5.95 to \$0.018.
+
+We describe \textbf{Elephant Herd}, which partitions a corpus across $N$ persistent
+listeners, each holding its partition as a cached prefix, and broadcasts every
+conversational turn to all of them. Each listener contributes a cited fact or stays
+silent, and a leader merges what returns into a briefing.
+
+Measured on RULER with seven listener models, three results. \textbf{Partitioning
+does not improve retrieval}: a 7-way herd and a single model reading everything both
+score 100\% at 131K, 256K and 512K tokens, at the same cost; the case for partitioning
+is capacity and specialisation, not recall. \textbf{Partitioning does not break chained
+facts either}, provided each listener is asked for relevant material rather than for
+the answer: on a variable-tracking chain split across seven partitions, one round
+scores 9 or 10 out of 10 for five of seven models. \textbf{Cheap listeners match a
+frontier one}: four models costing \$0.004 to \$0.086 per query score the same as
+Claude Sonnet 5 at \$0.357. We also report how an earlier version of our own harness
+produced 0\% on the chain task for all seven models, Sonnet included, and why a uniform
+zero across vendors should be read as a fault in the harness before a property of the
+method.
+\end{abstract}
+
+\section{Motivation}
+
+A project folder grows for months. The assistant working in it sees whatever a
+retriever fetched for the current question, and nothing else. A decision written down
+in March is never read again.
+
+This looks like a retrieval problem and is usually treated as one. We suggest it is a
+different problem. Retrieval runs when somebody asks a question, and most of the time
+nobody asks. A note about pricing does not surface during a conversation about pricing
+unless someone stops and goes looking for it.
+
+Elephant Herd inverts this. Agents hold the notes in context and observe the
+conversation. When one recognises something relevant, it says so. Nobody has to ask.
+
+What makes this possible now is not a new algorithm. Context stopped being expensive.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Configuration & Cost per turn, 1.19M-token corpus \\
+\midrule
+Frontier model, uncached & \$5.95 \\
+Frontier model, cached & \$0.60 \\
+Small model, uncached & \$0.089 \\
+\textbf{Small model, cached} & \textbf{\$0.018} \\
+\bottomrule
+\end{tabular}
+\caption{Two effects multiply: model choice ($\sim$67$\times$) and caching
+($\sim$5$\times$). The first made a resident corpus viable. The second made it cheap to
+read repeatedly, which is what a listener hearing every turn needs.}
+\end{table}
+
+The cost argument only holds if a cheap listener is adequate for the task. We measure
+that directly in Section~\ref{sec:models}, rather than assuming it from price or from
+published long-context scores.
+
+\section{System}
+
+A \emph{herd} is $N$ \emph{elephants} plus a \emph{leader}.
+
+Each elephant holds one partition as a cached prefix. Partitions follow domain
+boundaries wherever possible, splitting only when a domain exceeds the context window;
+assembly is byte-deterministic so the cached prefix stays valid across turns.
+
+Every turn is broadcast to all elephants. A local turn gate drops conversational filler
+before it reaches them, which costs nothing and removes a class of false contribution:
+an elephant cannot speak on a turn it never received.
+
+Each elephant replies with a cited contribution or the literal token
+\texttt{<silent/>}. Silence is the expected case.
+
+The leader merges contributions into a briefing for the calling agent. The audience is
+a model rather than a person, so the output is facts with source paths and no prose.
+When nothing was contributed it emits nothing. When two elephants disagree it reports
+both rather than picking one.
+
+An optional iterated mode (\texttt{-{}-deep}) re-broadcasts the findings so far, so an
+elephant can extend what another found. None of the results below needed it.
+
+\subsection{Implementation notes that turned out to matter}
+
+\textbf{Provider pinning is experimental control, not cost hygiene.} The same model is
+served by roughly 30 hosts at cache-read prices spanning 10$\times$ and quantizations
+from fp4 to bf16. Unpinned routing varies recall between calls.
+
+\textbf{Listed cache prices are unreliable.} One provider billed 4.2$\times$ its
+advertised cache-read rate, because a five-minute TTL means calls inside the window
+re-create the cache while still reporting a 100\% cache hit.
+
+\textbf{Truncation is indistinguishable from silence.} Reasoning tokens come out of the
+same budget as the reply. A listener that exhausts that budget while reasoning returns
+an empty string, which looks exactly like a deliberate \texttt{<silent/>}. Unless the
+finish reason is checked, a budget problem is scored as a recall failure. Section
+\ref{sec:harness} shows this happening at a 2{,}000-token cap.
+
+\textbf{Ask listeners for material, not answers.} A listener told to answer or stay
+silent will correctly stay silent when its partition holds only part of an answer, and
+the part never reaches the merge. Section~\ref{sec:harness} measures the effect.
+
+\textbf{Reasoning must be enabled.} Disabling it saves around 200 output tokens per
+silent turn, worth \$0.0001 against a \$0.0106 cache read, and loses correct answers.
+
+\section{Experiments}
+
+RULER \cite{ruler} (Apache 2.0). \texttt{single} is one call over the full context;
+\texttt{herd} is 7 calls over a seventh each, reading the same total tokens, with the
+replies concatenated and scored by RULER's rule that every gold string must appear.
+Every listener is pinned to one host, so routing cannot vary quantization or recall
+between calls.
+
+Sections \ref{sec:retrieval} and \ref{sec:length} use GLM-5.3-Flash on haystacks
+generated from Paul Graham essays. Sections \ref{sec:models} and \ref{sec:harness} use
+seven models on the public 128K RULER set published as
+\texttt{self-long/RULER-llama3-1M}, $n=10$ per cell. Costs are OpenRouter prices in
+September 2026 for one uncached query of about 128K input tokens; token counts are
+given so they can be recomputed as prices change.
+
+\subsection{Retrieval is preserved}\label{sec:retrieval}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Task & Single & Herd & Mean speakers \\
+\midrule
+Single needle & 100\% & 100\% & 1.0 / 7 \\
+Needle among distractors & 100\% & 100\% & 2.9 / 7 \\
+Four scattered values & 100\% & 100\% & 3.8 / 7 \\
+\bottomrule
+\end{tabular}
+\caption{$n=10$ per task at 131K tokens.}
+\end{table}
+
+The multi-value case is the notable one: the four gold values are scattered, scoring
+requires all of them, and roughly 3.8 elephants spoke per sample, so the values
+genuinely landed in different partitions and the merge recovered them. Silence
+discriminated cleanly, with zero false contributions across 70 listener calls on the
+single-needle task.
+
+\subsection{Context length: no separation up to 512K}\label{sec:length}
+
+If partitioning helped recall, the advantage should appear as the single context grows
+while each partition stays small. It does not.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Context & Single & Herd & Cost, single & Cost, herd \\
+\midrule
+131K & 100\% & 100\% & \$0.0072 & \$0.0055 \\
+256K & 100\% & 100\% & \$0.0121 & \$0.0126 \\
+512K & 100\% & 100\% & \$0.0219 & \$0.0235 \\
+\bottomrule
+\end{tabular}
+\caption{$n=8$ per length. No degradation, so the curves never diverge.}
+\end{table}
+
+\textbf{Partitioning does not improve retrieval at any length we can test.} The reasons
+to partition are capacity and specialisation: a corpus larger than any context window
+has no single-context arm at all, and partitions mapping to real domains make ``which
+specialist should have known this?'' answerable, which is what silence and attribution
+depend on. Neither is expressible in RULER, whose haystacks are arbitrary essay chunks.
+
+\subsection{Chained facts survive partitioning}\label{sec:models}
+
+Variable tracking asks for every variable that ends up holding a value, where the value
+is assigned once and then passed along a chain: \texttt{VAR A = 46208},
+\texttt{VAR B = VAR A}, and so on, five variables in all. The links are scattered
+through 128K tokens of filler, so with seven partitions no listener sees the whole
+chain. This has the same shape as tracing a symbol through a codebase or following a
+decision through notes that refer to each other: the answer is written down nowhere,
+and has to be assembled.
+
+Each listener received its partition, the question, and this instruction:
+
+\begin{quote}\small
+You hold part of a longer text. Report anything in your part that is relevant to the
+question, quoted exactly. Include things that only point at something else instead of
+answering it. Others hold the rest of the text, so do not try to work out the final
+answer. Nothing relevant? Reply: \texttt{<silent/>}
+\end{quote}
+
+\noindent with a reply budget of 20{,}000 tokens, one round, no iteration.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Listener & One fact & Several facts & Chain & Cost per query \\
+\midrule
+DeepSeek-V4.1-Flash   & 10/10 & 10/10 & 10/10 & \$0.011 \\
+Gemini 3.7 Flash      & 10/10 & 10/10 & 10/10 & \$0.086 \\
+Claude Sonnet 5       & 10/10 & 10/10 &  9/10 & \$0.357 \\
+GLM-5.3-Flash         & 10/10 & 10/10 &  9/10 & \$0.016 \\
+Qwen3.7-Flash         & 10/10 & 10/10 &  9/10 & \$0.004 \\
+Xiaomi MiMo-v2.5      & 10/10 &  8/10 &  2/10 & \$0.012 \\
+Gemini 2.5 Flash-Lite & 10/10 &  9/10 &  0/10 & \$0.016 \\
+\bottomrule
+\end{tabular}
+\caption{Herd of 7, 128K tokens, one round. ``One fact'' is RULER
+\texttt{niah\_single\_2}, ``several facts'' \texttt{niah\_multivalue}, ``chain''
+\texttt{vt}. Cost is for the chain task.}
+\end{table}
+
+Five of seven listeners recover the chain in a single round, so partitioning does not
+break linked questions. A single call over the whole context scored 3 of 3 (GLM-5.3-Flash) and 2 of 2
+(DeepSeek-V4.1-Flash) on the same data, so the herd matches the unpartitioned case;
+that comparison is small and was run under the old instruction below, which suits a
+single reader since it can see the whole chain.
+
+The listeners that succeed include four whose cost per query is between a fourth and a
+ninetieth of Sonnet 5's, with the same or one more correct answer. Price did not predict
+the two failures, and neither did the other two tasks: Gemini 2.5 Flash-Lite is near
+perfect on one fact and several facts and scores zero on the chain. Both failing models
+also fail under the old instruction below, so the change of instruction does not
+explain them; we have not established what does.
+
+\subsection{A harness fault that looked like a finding}\label{sec:harness}
+
+An earlier version of this paper reported that partitioning destroys chained facts:
+0\% for the herd against 100\% for a single model, recovered only by iterating the
+herd at about three times the cost. That result came from two choices in our harness,
+not from partitioning.
+
+The first was the instruction. Listeners were told to answer the question from their
+part, or reply \texttt{<silent/>}. A listener holding \texttt{VAR LKDVP = VAR TWGEN}
+has no answer to ``which variables equal 46208?'', since its line holds no value, so
+silence was the correct reply and every listener gave it. The second was a reply
+budget of 2{,}000 tokens, which reasoning could exhaust before any answer was written,
+returning an empty string scored as silence.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\toprule
+Listener & Old: answer or silent, 2K & New: report relevant, 20K \\
+\midrule
+DeepSeek-V4.1-Flash   & 0/10 & 10/10 \\
+Gemini 3.7 Flash      & 0/10 & 10/10 \\
+Claude Sonnet 5       & 0/10 &  9/10 \\
+GLM-5.3-Flash         & 1/10 &  9/10 \\
+Qwen3.7-Flash         & 0/10 &  9/10 \\
+Xiaomi MiMo-v2.5      & 0/9  &  2/10 \\
+Gemini 2.5 Flash-Lite & 0/10 &  0/10 \\
+\bottomrule
+\end{tabular}
+\caption{Chain task, same data and settings apart from the instruction and the reply
+budget. One Xiaomi sample was lost to a provider error. Under the old settings the one
+fact and several facts tasks scored 9 or 10 out of 10 for every model, so the fault
+was specific to answers spread across partitions.}
+\end{table}
+
+In a smaller run ($n=3$), changing the instruction alone lifted Sonnet 5 and Gemini
+3.7 Flash to 3 of 3 but the three cheapest models only to 1 of 3; adding the larger
+budget lifted the two cheap models we retested to 3 of 3. Both changes were needed.
+
+Two lessons generalise. A listener that follows a strict silence instruction faithfully
+hides partial information the system needs, while one that ignores it is rewarded; a
+benchmark built that way measures obedience. And seven models from six vendors scoring
+zero on the same task is more likely a fault in the harness than a property of the
+method. We read it as the latter for several weeks.
+
+Results from the earlier version that depended on this harness are withdrawn: the
+0\% single-round chain result, the scaling of iteration rounds with chain length, and a
+finding about the rule for halting iteration. Iteration was compensating for the
+harness, and is not needed for any result reported here.
+
+\section{Limitations}
+
+$n$ is 10 per cell; single-sample differences between listeners are not meaningful.
+The chain comparison uses one length (128K), one partition count (7) and one chain
+shape. Retrieval and context-length results use one model and one haystack type.
+
+The RULER instruction above is written for this benchmark. The deployed system asks
+listeners for a cited contribution of one to three sentences, and has not been
+evaluated with the same rigour.
+
+We do not know why two listeners fail on chains under both instructions. Our count of
+how many listeners spoke treats an empty reply as speaking, so the speaker counts in
+Table~2 are upper bounds, and the count cannot be used to explain those failures.
+
+RULER cannot test the system's central design choice. Its haystacks have no domain
+structure, so semantic partitioning is not expressible and the results measure
+\emph{arbitrary} partitioning, a lower bound. Its needles also share vocabulary with the
+question, which is the easy case; NoLiMa \cite{nolima} shows accuracy falling sharply
+once that overlap is removed. Whether domain-coherent partitions do better is untested
+and requires a corpus with real domains.
+
+There is no retrieval baseline. The claim here concerns partitioning versus whole
+context, not versus retrieval.
+
+The conversational setting that motivates the system is not benchmarked; RULER is
+single-query. Whether a listener recognises relevance when \emph{no question was asked}
+is the claim the system rests on and the one least tested here.
+
+\section{Related work}
+
+Closest is ExtAgents \cite{extagents}, which partitions external knowledge across agents
+and broadcasts a query, but instantiates agents per query rather than persisting them.
+LLM-based multi-agent blackboard systems \cite{blackboard} have partition-owning agents
+that volunteer to a central agent, but retrieve on demand rather than holding knowledge
+resident.
+Cache-Augmented Generation \cite{cag} argues for a resident corpus in a single context,
+and LOFT \cite{loft} benchmarks whether long-context models can subsume retrieval
+outright.
+Overhearing agents \cite{overhearing} survey single assistants that monitor ambient
+activity and intervene when useful, and identify ``when to speak'' as open.
+
+The contribution here is the persistence-via-cache economics, the measurement that
+cheap listeners suffice, and the finding that the listener's instruction, not the
+partitioning, decides whether facts spread across partitions survive.
+
+\section*{Code}
+
+\url{https://github.com/Florin-Birgu/elephant-herd}
+
+\begin{thebibliography}{9}
+
+\bibitem{ruler} C.-P. Hsieh et al.
+\emph{RULER: What's the Real Context Size of Your Long-Context Language Models?}
+arXiv:2404.06654, 2024.
+
+\bibitem{extagents} Z. Liu, Z. Wan, P. Li, M. Yan, F. Huang, Y. Liu.
+\emph{Scaling External Knowledge Input Beyond Context Windows of LLMs via Multi-Agent
+Collaboration.} arXiv:2505.21471, ACL 2026.
+
+\bibitem{blackboard} A. Salemi et al.
+\emph{LLM-based Multi-Agent Blackboard System for Information Discovery in Data
+Science.} arXiv:2510.01285, 2025.
+
+\bibitem{cag} B. J. Chan, C.-T. Chen, J.-H. Cheng, H.-H. Huang.
+\emph{Don't Do RAG: When Cache-Augmented Generation is All You Need for Knowledge
+Tasks.} arXiv:2412.15605, WWW 2025.
+
+\bibitem{overhearing} A. Zhu, C. Callison-Burch.
+\emph{Overhearing LLM Agents: A Survey, Taxonomy, and Roadmap.}
+arXiv:2509.16325, 2025.
+
+\bibitem{nolima} A. Modarressi et al.
+\emph{NoLiMa: Long-Context Evaluation Beyond Literal Matching.}
+arXiv:2502.05167, ICML 2025.
+
+\bibitem{loft} J. Lee et al.
+\emph{Can Long-Context Language Models Subsume Retrieval, RAG, SQL, and More?}
+arXiv:2406.13121, 2024.
+
+\end{thebibliography}
+
+\end{document}

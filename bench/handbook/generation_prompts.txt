@@ -1,0 +1,355 @@
+Exact prompts given to the Claude subagents (claude-opus-5-5) that built this benchmark, in order.
+
+==============================================================================
+Read product A, list facts
+==============================================================================
+You are a reader for a benchmark built from GitLab's public handbook. Your job: read part of it and write down notable facts that a person working at the company might later ask about. You do NOT write questions.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Files to read: the markdown files listed (one path per line) in
+<repo>/bench/handbook/facts/_product_a.list
+Paths are relative to <repo>. Section name: product.
+You can hold about 200K tokens, so you cannot read everything. Spread your reading across as many different files and subtopics as you can rather than reading a few files end to end. Skip navigation, link lists, templates and boilerplate.
+
+Output: write exactly one file, <repo>/bench/handbook/facts/product_a.jsonl, one JSON object per line, about 30 lines. Fields:
+- "id": "product_a-01", "product_a-02", ...
+- "section": "product"
+- "file": path relative to the handbook root, i.e. starting after "content/handbook/" (e.g. "product/product-principles/_index.md")
+- "quote": the exact text from the file, copied verbatim, at most 300 characters, enough to prove the fact
+- "fact": the fact in one plain sentence, in your own words
+- "kind": one of number, decision, policy, name, date, process, comparison, definition
+- "links": other handbook sections this fact mentions or depends on (e.g. ["finance"]), or []
+
+What makes a good fact: specific and checkable (a number, a named thing, a rule, a decision and its reason, a threshold, a date, who owns what). Prefer facts that someone could plausibly ask about in their own words. Avoid vague statements ("we value collaboration"). Include a few facts that mention or depend on other sections - they are used later for questions that combine sections. The quote must be copied exactly; it will be checked.
+
+Constraints: read only the listed files; do not modify anything except your output file; no web access; do not write questions.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: one or two sentences (how many facts, how many files read)
+
+==============================================================================
+Read product B, list facts
+==============================================================================
+You are a reader for a benchmark built from GitLab's public handbook. Your job: read part of it and write down notable facts that a person working at the company might later ask about. You do NOT write questions.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Files to read: the markdown files listed (one path per line) in
+<repo>/bench/handbook/facts/_product_b.list
+Paths are relative to <repo>. Section name: product.
+You can hold about 200K tokens, so you cannot read everything. Spread your reading across as many different files and subtopics as you can rather than reading a few files end to end. Skip navigation, link lists, templates and boilerplate.
+
+Output: write exactly one file, <repo>/bench/handbook/facts/product_b.jsonl, one JSON object per line, about 30 lines. Fields:
+- "id": "product_b-01", "product_b-02", ...
+- "section": "product"
+- "file": path relative to the handbook root, i.e. starting after "content/handbook/" (e.g. "product/product-principles/_index.md")
+- "quote": the exact text from the file, copied verbatim, at most 300 characters, enough to prove the fact
+- "fact": the fact in one plain sentence, in your own words
+- "kind": one of number, decision, policy, name, date, process, comparison, definition
+- "links": other handbook sections this fact mentions or depends on (e.g. ["finance"]), or []
+
+What makes a good fact: specific and checkable (a number, a named thing, a rule, a decision and its reason, a threshold, a date, who owns what). Prefer facts that someone could plausibly ask about in their own words. Avoid vague statements ("we value collaboration"). Include a few facts that mention or depend on other sections - they are used later for questions that combine sections. The quote must be copied exactly; it will be checked.
+
+Constraints: read only the listed files; do not modify anything except your output file; no web access; do not write questions.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: one or two sentences (how many facts, how many files read)
+
+==============================================================================
+Read finance, list facts
+==============================================================================
+You are a reader for a benchmark built from GitLab's public handbook. Your job: read part of it and write down notable facts that a person working at the company might later ask about. You do NOT write questions.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Files to read: all markdown files under
+<repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/finance/
+(74 files, about 175K tokens). Section name: finance.
+You can hold about 200K tokens. Spread your reading across as many different files and subtopics as you can. Skip navigation, link lists, templates and boilerplate.
+
+Output: write exactly one file, <repo>/bench/handbook/facts/finance.jsonl, one JSON object per line, about 30 lines. Fields:
+- "id": "finance-01", "finance-02", ...
+- "section": "finance"
+- "file": path relative to the handbook root, i.e. starting after "content/handbook/" (e.g. "finance/procurement/_index.md")
+- "quote": the exact text from the file, copied verbatim, at most 300 characters, enough to prove the fact
+- "fact": the fact in one plain sentence, in your own words
+- "kind": one of number, decision, policy, name, date, process, comparison, definition
+- "links": other handbook sections this fact mentions or depends on (e.g. ["total-rewards"]), or []
+
+What makes a good fact: specific and checkable (a number, a named thing, a rule, a threshold, a date, who approves what, a deadline). Prefer facts someone could plausibly ask about in their own words. Avoid vague statements. Include a few facts that mention or depend on other sections - they are used later for questions that combine sections. The quote must be copied exactly; it will be checked.
+
+Constraints: read only files in that folder; do not modify anything except your output file; no web access; do not write questions.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: one or two sentences (how many facts, how many files read)
+
+==============================================================================
+Read total-rewards, list facts
+==============================================================================
+You are a reader for a benchmark built from GitLab's public handbook. Your job: read part of it and write down notable facts that a person working at the company might later ask about. You do NOT write questions.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Files to read: all markdown files under
+<repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/total-rewards/
+(26 files, about 131K tokens). Section name: total-rewards.
+Read as much as you can; spread across files and subtopics. Skip navigation, link lists, templates and boilerplate.
+
+Output: write exactly one file, <repo>/bench/handbook/facts/total-rewards.jsonl, one JSON object per line, about 30 lines. Fields:
+- "id": "total-rewards-01", ...
+- "section": "total-rewards"
+- "file": path relative to the handbook root, i.e. starting after "content/handbook/"
+- "quote": the exact text from the file, copied verbatim, at most 300 characters, enough to prove the fact
+- "fact": the fact in one plain sentence, in your own words
+- "kind": one of number, decision, policy, name, date, process, comparison, definition
+- "links": other handbook sections this fact mentions or depends on (e.g. ["finance", "hiring"]), or []
+
+What makes a good fact: specific and checkable (amounts, percentages, eligibility rules, timing, who decides, named programs). Prefer facts someone could plausibly ask about in their own words. Avoid vague statements. Include a few facts that mention or depend on other sections - they are used later for questions that combine sections. The quote must be copied exactly; it will be checked.
+
+Constraints: read only files in that folder; do not modify anything except your output file; no web access; do not write questions.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: one or two sentences (how many facts, how many files read)
+
+==============================================================================
+Read leadership+hiring, list facts
+==============================================================================
+You are a reader for a benchmark built from GitLab's public handbook. Your job: read part of it and write down notable facts that a person working at the company might later ask about. You do NOT write questions.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Files to read: all markdown files under these two folders (about 160K tokens together):
+<repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/leadership/  (section: leadership)
+<repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/hiring/  (section: hiring)
+Spread your reading across files and subtopics. Skip navigation, link lists, templates and boilerplate.
+
+Output: write exactly two files, one JSON object per line, about 25 lines each:
+<repo>/bench/handbook/facts/leadership.jsonl  (ids "leadership-01", ...; "section": "leadership")
+<repo>/bench/handbook/facts/hiring.jsonl  (ids "hiring-01", ...; "section": "hiring")
+Fields:
+- "id", "section" as above
+- "file": path relative to the handbook root, i.e. starting after "content/handbook/"
+- "quote": the exact text from the file, copied verbatim, at most 300 characters, enough to prove the fact
+- "fact": the fact in one plain sentence, in your own words
+- "kind": one of number, decision, policy, name, date, process, comparison, definition
+- "links": other handbook sections this fact mentions or depends on (e.g. ["total-rewards"]), or []
+
+What makes a good fact: specific and checkable (a number, a rule, a named process, a step count, who decides, a threshold). Prefer facts someone could plausibly ask about in their own words. Avoid vague statements. Include a few facts that mention or depend on other sections - they are used later for questions that combine sections. The quote must be copied exactly; it will be checked.
+
+Constraints: read only files in those folders; do not modify anything except your two output files; no web access; do not write questions.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: one or two sentences (how many facts, how many files read)
+
+==============================================================================
+Read communication+values+ceo, list facts
+==============================================================================
+You are a reader for a benchmark built from GitLab's public handbook. Your job: read part of it and write down notable facts that a person working at the company might later ask about. You do NOT write questions.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Files to read: all markdown files under these three folders (about 122K tokens together):
+<repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/communication/  (section: communication)
+<repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/values/  (section: values)
+<repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/ceo/  (section: ceo)
+Read as much as you can. Skip navigation, link lists, templates and boilerplate.
+
+Output: write exactly three files, one JSON object per line:
+<repo>/bench/handbook/facts/communication.jsonl  (about 20; ids "communication-01", ...)
+<repo>/bench/handbook/facts/values.jsonl  (about 15; ids "values-01", ...)
+<repo>/bench/handbook/facts/ceo.jsonl  (about 10; ids "ceo-01", ...)
+Fields:
+- "id", "section" as above
+- "file": path relative to the handbook root, i.e. starting after "content/handbook/"
+- "quote": the exact text from the file, copied verbatim, at most 300 characters, enough to prove the fact
+- "fact": the fact in one plain sentence, in your own words
+- "kind": one of number, decision, policy, name, date, process, comparison, definition
+- "links": other handbook sections this fact mentions or depends on, or []
+
+What makes a good fact: specific and checkable (a rule, a named practice, a number, a definition, a stated reason for a decision). The values section is full of general statements - pick the concrete, checkable ones (named sub-values, specific rules, examples with specifics). Include a few facts that mention or depend on other sections - they are used later for questions that combine sections. The quote must be copied exactly; it will be checked.
+
+Constraints: read only files in those folders; do not modify anything except your three output files; no web access; do not write questions.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: one or two sentences (how many facts per file, how many files read)
+
+==============================================================================
+Write single-elephant and multi-answer questions
+==============================================================================
+You write benchmark questions for a system that holds a company handbook split across 8 "elephants" (one per section) and must answer questions people ask in their own words. You are writer 1 of 3; other writers handle cross-section, changed-over-time, no-answer and overhearing items, so do not write those.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Inputs:
+- Verified facts (every quote checked word for word): <repo>/bench/handbook/facts/*.jsonl (ignore files starting with "_"). Fields: id, section, file, quote, fact, kind, links.
+- The corpus itself, for checking: <repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/ . The 8 sections in play: product, finance, total-rewards, leadership, hiring, communication, values, ceo. You may grep/read these folders.
+
+Write exactly one file: <repo>/bench/handbook/questions_w1.jsonl, one JSON object per line.
+
+Part A - 45 single-section questions ("type": "paraphrase"): about 25 easy, 20 hard, spread across all 8 sections roughly in proportion to their fact counts (product has the most). Each is answered by one fact.
+Part B - 10 questions with more than one right answer ("type": "multi_answer"): the corpus gives different or conflicting answers in different places, or several things each correctly answer it. Known example to include: values/_index.md line ~37 says value-change merge requests go to the Chief People Officer, while line ~982 says to assign them to the CEO. Find others by grepping the corpus for the same topic appearing in more than one place.
+
+How to write a question:
+- Ask it the way an employee would ask a colleague, in plain words. Do NOT reuse the distinctive words of the quote: no rare nouns, program names, acronyms or exact figures from the source text should appear in the question. Example: source says "hotel $300 a night"; bad: "What is the hotel limit of $300?"; good: "How much can I spend on a place to sleep when I travel for work?"
+- Easy = the fact is stated plainly once. Hard = the fact is buried, needs reading a table or a condition, or the question is phrased very indirectly.
+- The answer must be a short, checkable thing (a number, name, rule, date), not an opinion.
+
+Fields per line:
+- "id": "w1-001", ...
+- "question": the question
+- "type": "paraphrase" or "multi_answer"
+- "difficulty": "easy" or "hard"
+- "sections": list of sections that hold the answer, e.g. ["finance"] (use "product" for product_a/product_b facts)
+- "fact_ids": list of fact ids used ([] allowed for multi_answer items found by grepping)
+- "sources": list of {"file": path relative to handbook root, "quote": exact verbatim text <= 300 chars}
+- "answer_parts": list of parts, each a list of acceptable short strings; a reply is correct if every part is matched by at least one of its strings (case-insensitive substring). Include sensible variants, e.g. [["$300", "300 USD", "300 dollars"]]. For multi_answer, one part containing every correct alternative.
+- "note": one sentence on why the answer is right, and for multi_answer why several answers exist
+
+Check your own work: every quote must be copied exactly from the file (grep it); answer strings must appear in or follow directly from the quotes.
+
+Constraints: write only your output file; no web; do not modify facts or corpus.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: counts by type and difficulty, and any concerns
+
+==============================================================================
+Write cross-section and changed-over-time questions
+==============================================================================
+You write benchmark questions for a system that holds a company handbook split across 8 "elephants" (one per section) and must answer questions people ask in their own words. You are writer 2 of 3; other writers handle single-section, multi-answer, no-answer and overhearing items, so do not write those.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Inputs:
+- Verified facts (every quote checked word for word): <repo>/bench/handbook/facts/*.jsonl (ignore files starting with "_"). Fields: id, section, file, quote, fact, kind, links. The "links" field marks facts that mention other sections - start there.
+- The corpus, for checking: <repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/ . The 8 sections in play: product, finance, total-rewards, leadership, hiring, communication, values, ceo. You may grep/read these folders.
+
+Write exactly one file: <repo>/bench/handbook/questions_w2.jsonl, one JSON object per line.
+
+Part A - 25 cross-section questions ("type": "cross"): the full answer needs facts from 2 sections (18 questions) or 3+ sections (7 questions). Each section must contribute something the others do not hold. Example shape: "If I'm on a performance plan, can I still get my yearly pay rise and new stock?" needs leadership (underperformance rule) + total-rewards (eligibility). Mix easy and hard.
+Part B - 10 changed-over-time questions ("type": "changed"): the corpus itself states that something changed, replaced something older, starts or stopped on a date, or has an old and a new value (look for words like replaced, no longer, previously, moved to, starting, from <date>, on hold, deprecated). Ask about the current state or about the change, and say in "note" what the old and new states are.
+
+How to write a question:
+- Ask it the way an employee would ask a colleague, in plain words. Do NOT reuse the distinctive words of the quotes: no rare nouns, program names, acronyms or exact figures from the source should appear in the question.
+- The answer must be short and checkable, not an opinion.
+
+Fields per line:
+- "id": "w2-001", ...
+- "question", "type" ("cross" or "changed"), "difficulty" ("easy" or "hard")
+- "sections": list of sections that hold parts of the answer (use "product" for product_a/product_b facts)
+- "fact_ids": list of fact ids used
+- "sources": list of {"file": path relative to handbook root, "quote": exact verbatim text <= 300 chars}, one or more per section involved
+- "answer_parts": list of parts, each a list of acceptable short strings; a reply is correct if every part is matched by at least one of its strings (case-insensitive substring). For cross questions use one part per section's contribution. Include sensible variants.
+- "note": one sentence on how the parts combine (cross) or what changed (changed)
+
+Check your own work: every quote copied exactly (grep it); each answer string appears in or follows directly from a quote.
+
+Constraints: write only your output file; no web; do not modify facts or corpus.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: counts by type, sections-per-question distribution, any concerns
+
+==============================================================================
+Write no-answer questions and overhearing conversations
+==============================================================================
+You write benchmark items for a system that holds a company handbook split across 8 "elephants" (one per section). The system listens to conversations and each elephant speaks up only when its section holds something relevant. You are writer 3 of 3; others write normal questions, so you write only the two kinds below.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Inputs:
+- Verified facts: <repo>/bench/handbook/facts/*.jsonl (ignore files starting with "_"). Fields: id, section, file, quote, fact, kind, links.
+- The corpus: <repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/ . The 8 sections the system holds: product, finance, total-rewards, leadership, hiring, communication, values, ceo. Only these 8 count; other folders in the handbook are NOT held by the system.
+
+File 1: <repo>/bench/handbook/questions_w3.jsonl - 15 no-answer questions ("type": "no_answer").
+- Plausible questions an employee might ask, on topics near what the 8 sections cover, whose answer is NOT in those 8 sections. Examples of the kind: a specific detail the handbook never states, or a topic only covered in a folder outside the 8.
+- You MUST verify absence: grep the 8 section folders for the key terms and synonyms, and record what you searched in "note". If you find the answer, drop the question.
+- Fields: "id" ("w3-001", ...), "question", "type": "no_answer", "difficulty" ("easy" = clearly unrelated detail, "hard" = very close to something that is covered), "sections": [], "fact_ids": [], "sources": [], "answer_parts": [], "note": the searches you ran and what you found.
+
+File 2: <repo>/bench/handbook/overhearing.jsonl - 20 short conversations.
+- 2 to 4 turns between two colleagues ("A:"/"B:"), about planning or deciding something, where one fact from the 8 sections would change what they do - but nobody asks for it. Example: two people planning a team dinner on a trip, assuming no spending limit, when the handbook sets a daily meal limit.
+- Do not reuse the distinctive words of the fact in the conversation.
+- About 15 where the fact matters, and 5 control conversations where nothing in the 8 sections is relevant (everyone should stay quiet).
+- Fields: "id" ("ov-001", ...), "conversation" (a single string, turns separated by newline), "relevant": true/false, "sections": sections that should speak ([] for controls), "fact_ids", "sources": [{"file", "quote"}] exact verbatim quotes, "should_surface": the fact in one plain sentence ("" for controls), "answer_parts": list of parts of acceptable short strings a good interjection would contain ([] for controls), "note": why it matters (or why nothing is relevant, with the searches you ran).
+
+Check your own work: every quote copied exactly (grep it).
+
+Constraints: write only your two output files; no web; do not modify facts or corpus.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: counts, and any concerns
+
+==============================================================================
+Check writer 1's 55 questions
+==============================================================================
+You are an independent checker for benchmark questions built from GitLab's public handbook. You did not write them. Your job is to find and fix problems, and drop items that cannot be fixed. Be strict: a bad question corrupts the benchmark.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Input: <repo>/bench/handbook/questions_w1.jsonl (55 items: types paraphrase and multi_answer).
+Corpus: <repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/ . The system under test holds only these 8 sections: product, finance, total-rewards, leadership, hiring, communication, values, ceo.
+Scoring rule used later: a reply is correct if every entry of "answer_parts" is matched by at least one of its strings, case-insensitive substring match.
+
+Check every item:
+1. Quotes: each "sources" quote appears verbatim in its file (grep it).
+2. Support: the answer strings are actually stated by (or follow directly from) the quotes. Read the surrounding text in the file to be sure the quote means what the item claims.
+3. Wording: the question must not reuse the quote's distinctive words (rare nouns, program names, acronyms, exact figures). Common topic words are fine. Rewrite the question if it leaks.
+4. Completeness: grep all 8 sections for other passages that answer the same question differently. If found: add the alternative to answer_parts and change type to multi_answer, or drop the item if it becomes muddled. Record what you searched.
+5. Loose answer strings: substring matching makes short strings dangerous ("3", "30" matches "300", "CEO", "yes", "two"). Rewrite each answer string so it can only match a correct reply - include the unit or context ("3 references", "30 minutes", "30-minute"), and give several phrasings. Remove any string that could plausibly appear in a wrong reply. If no safe string exists, drop the item.
+6. Answerable: a careful reader of the 8 sections could answer it; not ambiguous about which thing is meant.
+
+Output, write exactly two files:
+- <repo>/bench/handbook/checked_w1.jsonl: the kept items (fixed where needed), same fields as input plus "check": {"verdict": "ok" or "fixed", "changes": short text or ""}.
+- <repo>/bench/handbook/checked_w1_dropped.jsonl: dropped items, each with "check": {"verdict": "dropped", "reason": short text}.
+
+Constraints: modify only those two output files; no web; do not change the corpus or input file.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: counts ok / fixed / dropped, and the most common problem found
+
+==============================================================================
+Check writer 2+3 questions and conversations
+==============================================================================
+You are an independent checker for benchmark items built from GitLab's public handbook. You did not write them. Your job is to find and fix problems, and drop items that cannot be fixed. Be strict: a bad item corrupts the benchmark.
+
+Environment: working directory <repo>. Date 2026-09-27.
+
+Inputs:
+- <repo>/bench/handbook/questions_w2.jsonl (35 items: types cross and changed)
+- <repo>/bench/handbook/questions_w3.jsonl (15 items: type no_answer)
+- <repo>/bench/handbook/overhearing.jsonl (20 conversations; "relevant" true/false)
+Corpus: <repo>/corpora/handbook/handbook-7a2e264cb798305fd5c92b586ef9fe633a730244-content-handbook/content/handbook/ . The system under test holds only these 8 sections: product, finance, total-rewards, leadership, hiring, communication, values, ceo.
+Scoring rule used later: a reply is correct if every entry of "answer_parts" is matched by at least one of its strings, case-insensitive substring match.
+
+Check every question (w2, w3):
+1. Quotes: each "sources" quote appears verbatim in its file (grep it).
+2. Support: the answer strings are actually stated by (or follow directly from) the quotes; read the surrounding text. For cross items each listed section must really contribute a part the others lack. Drop items that need a leap of inference the text does not support.
+3. Wording: the question must not reuse the quotes' distinctive words (rare nouns, program names, acronyms, exact figures). Rewrite if it leaks.
+4. Completeness: grep all 8 sections for passages that answer differently; add alternatives or drop.
+5. Loose answer strings: substring matching makes short strings dangerous ("3", "30" matches "300", "manager", "everyone", "REC", "shadow"). Rewrite so each string can only match a correct reply (add unit/context, give several phrasings); drop the item if no safe string exists.
+6. no_answer items: independently re-verify the answer is absent from all 8 sections (grep key terms and synonyms). If it is present, drop the item. Keep answer_parts empty.
+
+Check every conversation:
+- For relevant ones: the quote supports "should_surface"; the conversation does not reuse the fact's distinctive words; tighten answer_parts as above. If another section could fairly speak up too, list it in a new field "also_ok_sections" rather than treating it as wrong.
+- For controls: verify nothing in the 8 sections is relevant (grep); keep "sections": [].
+
+Output, write exactly three files:
+- <repo>/bench/handbook/checked_w23.jsonl: kept w2 and w3 items (fixed where needed), same fields plus "check": {"verdict": "ok" or "fixed", "changes": short text or ""}.
+- <repo>/bench/handbook/checked_overhearing.jsonl: kept conversations, same fields plus "also_ok_sections" (list, may be empty) and "check" as above.
+- <repo>/bench/handbook/checked_w23_dropped.jsonl: every dropped item or conversation, with "check": {"verdict": "dropped", "reason": short text}.
+
+Constraints: modify only those three output files; no web; do not change the corpus or input files.
+
+End your final message with:
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
+Summary: counts ok / fixed / dropped per file, and the most common problem found
+

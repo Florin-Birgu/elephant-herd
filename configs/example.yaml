@@ -1,0 +1,28 @@
+# Copy to configs/local.yaml (gitignored) and point at your own folders.
+herd: example
+roots:
+  - ~/knowledge
+# One elephant per entry. Group by MEANING, never arbitrarily: the key metric asks
+# "should this elephant have known?", which is meaningless for a random partition.
+groups:
+  research:  [papers, reading]
+  projects:  [project-alpha, project-beta]
+  reference: [notes, snippets]
+partition:
+  cap_tokens: 800000        # leave headroom below the model's context limit
+models:
+  # Chosen by measurement on gold questions, not by price list - see
+  # plans/reports/gate-2-*-listener-model-selection-report.md
+  listener: deepseek/deepseek-v4.1-flash
+  listener_provider: deepinfra/fp8         # ALWAYS pin: hosts vary in price and quantization
+  herd_leader: anthropic/claude-sonnet-5
+  herd_leader_provider: anthropic
+  judge: google/gemini-2.5-flash-lite # must differ from listener AND leader families
+  judge_provider: google-ai-studio
+# rounds: 1 = one broadcast (default). --deep raises it; each round is another
+# full cache read per elephant, so it is opt-in.
+herd_options:
+  rounds: 1
+budget:
+  ceiling_usd: 15
+gold_questions: bench/questions/gold-local.jsonl   # gitignored; yours to write
