@@ -200,10 +200,10 @@ def install() -> int:
 
     SETTINGS.write_text(json.dumps(data, indent=2) + "\n")
 
-    # The skill is what makes /herd:init possible. Grouping needs to see content and
+    # The skill is what makes /herd init possible. Grouping needs to see content and
     # be argued with, which a CLI cannot do, so that work lives here.
     src = _skill_source()
-    skill_note = "SKILL.md not found; /herd:init will be unavailable"
+    skill_note = "SKILL.md not found; /herd init will be unavailable"
     if src:
         SKILLS_DIR.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, SKILLS_DIR / "SKILL.md")

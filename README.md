@@ -5,6 +5,29 @@ when they know something.
 
 Not retrieval. Nothing gets searched. The notes are already in context.
 
+## Results
+
+GitLab's public handbook, 806K tokens in 8 sections, 116 questions. Same answering model
+and same judge in every column; only how the model gets the text changes.
+[Details below.](#a-test-that-looks-like-real-use)
+
+| | herd | RAG, top 30 chunks | keyword search |
+|---|---|---|---|
+| right, out of 116 | **111** | 95 | 46 |
+| cost, all 116 | $0.59 | $0.18 | $0.08 |
+
+RAG lost mostly because the right page never came back from the search. The herd had
+every page in front of it.
+
+```bash
+git clone https://github.com/Florin-Birgu/elephant-herd
+cd elephant-herd && pip install -e .
+export OPENROUTER_API_KEY=sk-or-...
+herd claude install          # hooks + the /herd skill. Nothing runs yet.
+```
+
+Then `/herd init` in a Claude Code session. [More in Use it.](#use-it)
+
 ## The problem
 
 A folder of notes grows for months. The assistant you're working with sees whatever a
@@ -112,6 +135,24 @@ By kind, for DeepSeek: answer held by one elephant 45/45, more than one right an
 no answer in the handbook 12/14, overheard conversations 19/20. DeepSeek is the
 default listener because of this table.
 
+**Against RAG.** Same questions, same answering model, same judge; the only change is
+that a search picks the handbook chunks for each question instead of the herd holding
+every section whole.
+
+| kind | herd | RAG, top 30 | RAG, top 10 | keyword search |
+|---|---|---|---|---|
+| answer in one document | 45/45 | 43/45 | 43/45 | 21/45 |
+| answer spread over two or three sections | 17/19 | 11/19 | 5/19 | 1/19 |
+| overheard conversation | 19/20 | 11/20 | 10/20 | 7/20 |
+| all 116 | **111** | 95 | 87 | 46 |
+| full run | $0.59 | $0.18 | $0.09 | $0.08 |
+
+RAG is as good on simple lookups and cheaper. It falls behind where an answer is spread
+over several documents, because the search does not bring back every piece, and on
+overheard conversations, because nobody asked a question to search for. RAG here is
+OpenAI's text-embedding-3-large over 400-token chunks; no reranker or hybrid search.
+Code in `src/herd/handbook_rag.py`.
+
 The weak spot is noise: about a third of replies come from elephants that do not hold
 the answer, often to say so. In normal use the leader filters them out, but they still
 cost.
@@ -127,13 +168,13 @@ prompts used. `python -m herd.handbook_bench --model deepseek/deepseek-v4.1-flas
 git clone https://github.com/Florin-Birgu/elephant-herd
 cd elephant-herd && pip install -e .        # not on PyPI yet
 export OPENROUTER_API_KEY=sk-or-...
-herd claude install          # hooks + the /herd:init skill. Nothing runs yet.
+herd claude install          # hooks + the /herd init skill. Nothing runs yet.
 ```
 
 Then in a Claude Code session, inside the project you want it in:
 
 ```
-/herd:init
+/herd init
 ```
 
 It reads your folders, proposes which ones belong together, shows you the token
@@ -199,15 +240,15 @@ smaller members of the herd.
 Works, used daily by one person, not yet used by anyone else.
 
 Done: the runtime, both Claude Code hooks, the conversation elephant, `--deep`,
-named herds, the `/herd:init` skill, the benchmark harness, and the
+named herds, the `/herd init` skill, the benchmark harness, and the
 RULER results above. The listener model was chosen by measurement, not by price list:
 DeepSeek-V4.1-Flash answered 111 of 116 questions about GitLab's public handbook, the
 same as GLM-5.3-Flash, at a seventh of the cost.
 
 Not done, and worth knowing before you rely on it:
 
-- No RAG baseline, so "better than retrieval" is untested. The measured comparison is
-  partitioned-versus-whole-context, which is a different question.
+- RAG was tested in one standard form only (embeddings, top 10 or 30 chunks). A
+  reranker or hybrid search might narrow the gap.
 - No test of whether grouping by subject beats grouping at random. That is the central
   design claim. The handbook test makes it possible, since its sections are real
   subjects, but it has not been run.

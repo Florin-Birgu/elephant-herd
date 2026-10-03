@@ -43,7 +43,8 @@ at 10 of 10 up to 512K. \textbf{Cheap listeners match a frontier one}: four mode
 costing \$0.004 to \$0.086 per query score the same as Claude Sonnet 5 at \$0.357.
 \textbf{On realistic questions the herd answers 111 of 116}: 96 questions asked in
 other words than the text, plus 20 overheard conversations, over eight sections of the
-GitLab handbook (806K tokens), for \$0.59 per full run. We also report how an earlier
+GitLab handbook (806K tokens), for \$0.59 per full run, against 95 for a standard
+retrieval pipeline given the same questions, model and grader. We also report how an earlier
 version of our own harness produced 0\% on the chain task for all seven models, Sonnet
 included, and why a uniform zero across vendors should be read as a fault in the harness
 before a property of the method.
@@ -389,6 +390,42 @@ one item per listener. This is also the clearest weakness the test shows: about 
 of contributions came from listeners that did not hold the answer, often to say so. In
 deployment the leader filters them, but they are paid for.
 
+\subsection{Against retrieval}\label{sec:rag}
+
+The same 116 items were run through a standard retrieval pipeline: the eight sections
+cut into 400-token chunks with 50 tokens of overlap, embedded with OpenAI's
+text-embedding-3-large, the top $k$ chunks by cosine similarity passed to the same
+answering model with an instruction mirroring the listeners'. Same judge. A keyword
+retriever (BM25) is included as the classical baseline.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrrrr}
+\toprule
+Kind & $n$ & Herd & RAG $k{=}30$ & RAG $k{=}10$ & BM25 $k{=}10$ \\
+\midrule
+Answer held by one listener      & 45 & 45 & 43 & 43 & 21 \\
+More than one right answer       &  8 &  8 &  8 &  8 &  1 \\
+Answer changed over time         & 10 & 10 &  9 &  8 &  3 \\
+Answer spread over two or three  & 19 & 17 & 11 &  5 &  1 \\
+No answer in the eight sections  & 14 & 12 & 13 & 13 & 13 \\
+Overheard conversation           & 20 & 19 & 11 & 10 &  7 \\
+\midrule
+Total                            & 116 & 111 & 95 & 87 & 46 \\
+Cost of the full run             &     & \$0.59 & \$0.18 & \$0.09 & \$0.08 \\
+\bottomrule
+\end{tabular}
+\caption{Handbook test, DeepSeek-V4.1-Flash answering in every column. Retrieval cost
+includes embedding the corpus once (\$0.12).}
+\end{table}
+
+Retrieval matches the herd on single lookups at a third of the cost. It falls behind in
+the two cases the system was built for. On answers spread across sections, the search
+returned every needed document for only 7 of 19 questions at $k{=}10$, and 11 of the 14
+misses trace to a document never retrieved; tripling $k$ recovers about half the gap.
+On overheard conversations, where there is no question to search with, more context
+barely helps: 10 of 20 at $k{=}10$, 11 at $k{=}30$, against 19 for the herd.
+
 \section{Limitations}
 
 $n$ is 10 per cell on RULER; single-sample differences between listeners are not
@@ -415,8 +452,8 @@ once that overlap is removed. Whether domain-coherent partitions do better is st
 test, whose partitions are real subjects, makes the comparison possible but it has not
 been run.
 
-There is no retrieval baseline. The claim here concerns partitioning versus whole
-context, not versus retrieval.
+Retrieval was tested in one standard configuration; a reranker, hybrid search or
+query rewriting could narrow the gap, and were not tried.
 
 The conversational setting that motivates the system is tested only by 20 overheard
 conversations. Whether a listener recognises relevance when \emph{no question was asked}
